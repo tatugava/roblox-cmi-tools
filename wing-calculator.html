@@ -229,6 +229,7 @@
       min-height: 520px;
       flex-direction: column;
       padding: 28px;
+      container-type: inline-size;
       background:
         radial-gradient(circle at 90% 6%, rgba(104, 221, 255, .12), transparent 14rem),
         var(--surface);
@@ -251,13 +252,15 @@
     .result {
       margin: 34px 0 14px;
       font-family: "SF Pro Display", "Segoe UI", Inter, Arial, sans-serif;
-      font-size: clamp(48px, 7vw, 76px);
+      font-size: 68px;
+      font-size: clamp(40px, 10.5cqi, 68px);
       font-weight: 650;
       line-height: 1;
       letter-spacing: -.045em;
       font-variant-numeric: lining-nums tabular-nums;
       font-feature-settings: "lnum" 1, "tnum" 1;
-      overflow-wrap: anywhere;
+      white-space: nowrap;
+      overflow-wrap: normal;
     }
 
     .result-unit {
