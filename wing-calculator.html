@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b13">
+  <title>Wing Calculator - Cultivation: Mortal to Immortal Tools</title>
+  <meta name="description" content="A standalone calculator for wing coefficients and base stat percentages.">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b13;
+      --surface: rgba(22, 25, 39, .84);
+      --surface-2: rgba(32, 36, 54, .72);
+      --line: rgba(255, 255, 255, .09);
+      --line-strong: rgba(181, 141, 255, .28);
+      --text: #f6f3ff;
+      --muted: #9d9aae;
+      --accent: #b58dff;
+      --accent-2: #68ddff;
+      --good: #77f6c1;
+      --danger: #ff8997;
+      --radius: 24px;
+      --shadow: 0 28px 80px rgba(0, 0, 0, .46);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-width: 320px; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 12%, rgba(117, 75, 210, .18), transparent 32rem),
+        radial-gradient(circle at 88% 76%, rgba(44, 160, 199, .13), transparent 30rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .34;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 52px 52px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1160px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 54px;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 12px;
+      color: var(--accent-2);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 28px;
+      height: 1px;
+      background: currentColor;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(42px, 7vw, 76px);
+      font-weight: 500;
+      line-height: .94;
+      letter-spacing: -.045em;
+    }
+
+    h1 span {
+      color: transparent;
+      background: linear-gradient(115deg, #ffffff 10%, var(--accent) 56%, var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .intro {
+      max-width: 360px;
+      margin: 0 0 3px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(0, 1.28fr) minmax(330px, .72fr);
+      gap: 18px;
+    }
+
+    .card {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px);
+    }
+
+    .calculator { padding: 10px; }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(5, 7, 13, .52);
+    }
+
+    .tab {
+      min-height: 54px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 11px;
+      color: var(--muted);
+      background: transparent;
+      font-size: 14px;
+      font-weight: 750;
+      transition: color .2s ease, background .2s ease, transform .2s ease;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab:active { transform: scale(.99); }
+    .tab[aria-selected="true"] {
+      color: #0c0d14;
+      background: linear-gradient(120deg, var(--accent), #d7c3ff 58%, var(--accent-2));
+      box-shadow: 0 8px 26px rgba(151, 105, 240, .24);
+    }
+
+    .form { padding: 28px 20px 20px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 16px; }
+    .field { min-width: 0; }
+    .field-wide { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      margin: 0 0 8px;
+      color: #cbc7d7;
+      font-size: 12px;
+      font-weight: 780;
+      letter-spacing: .055em;
+      text-transform: uppercase;
+    }
+
+    .control-wrap { position: relative; }
+
+    input, select {
+      width: 100%;
+      height: 54px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      outline: none;
+      color: var(--text);
+      background: rgba(8, 10, 18, .72);
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    input { padding: 0 54px 0 16px; font-variant-numeric: tabular-nums; }
+    select { appearance: none; padding: 0 44px 0 16px; text-overflow: ellipsis; }
+    select option { background: #151824; }
+
+    input:hover, select:hover { border-color: rgba(255, 255, 255, .17); }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      background: rgba(10, 12, 21, .95);
+      box-shadow: 0 0 0 4px rgba(181, 141, 255, .11);
+    }
+
+    .suffix, .chevron {
+      position: absolute;
+      top: 50%;
+      right: 16px;
+      pointer-events: none;
+      transform: translateY(-50%);
+    }
+
+    .suffix { color: var(--muted); font-size: 14px; font-weight: 700; }
+    .chevron { width: 9px; height: 9px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: translateY(-70%) rotate(45deg); }
+
+    .field-note {
+      min-height: 18px;
+      margin: 7px 2px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .error { color: var(--danger); }
+
+    .side {
+      display: flex;
+      min-height: 520px;
+      flex-direction: column;
+      padding: 28px;
+      background:
+        radial-gradient(circle at 90% 6%, rgba(104, 221, 255, .12), transparent 14rem),
+        var(--surface);
+    }
+
+    .result-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .result-label { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--good);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 99px; background: currentColor; box-shadow: 0 0 10px currentColor; }
+
+    .result {
+      margin: 34px 0 14px;
+      font-family: "SF Pro Display", "Segoe UI", Inter, Arial, sans-serif;
+      font-size: clamp(48px, 7vw, 76px);
+      font-weight: 650;
+      line-height: 1;
+      letter-spacing: -.045em;
+      font-variant-numeric: lining-nums tabular-nums;
+      font-feature-settings: "lnum" 1, "tnum" 1;
+      overflow-wrap: anywhere;
+    }
+
+    .result-unit {
+      margin-left: .08em;
+      color: inherit;
+      font-family: inherit;
+      font-size: .56em;
+      font-weight: inherit;
+      letter-spacing: -.03em;
+      vertical-align: .28em;
+    }
+    .result-caption { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 28px;
+    }
+
+    .metric { padding: 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(8, 10, 18, .4); }
+    .metric span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .07em; }
+    .metric strong { display: block; overflow-wrap: anywhere; color: #b9b5c6; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .metric-wide { grid-column: 1 / -1; }
+
+    .formula {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      color: #dcd8e6;
+      background: rgba(8, 10, 18, .44);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+    }
+
+    .copy {
+      align-self: flex-start;
+      margin-top: 14px;
+      padding: 0;
+      border: 0;
+      color: var(--accent);
+      background: none;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .copy:hover { color: #d9c7ff; }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 18px;
+      padding: 0 4px;
+      color: #777486;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .footer b { color: #aaa5b8; font-weight: 700; }
+
+    :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+
+    @media (max-width: 850px) {
+      .shell { padding-top: 34px; }
+      .masthead { grid-template-columns: 1fr; align-items: start; }
+      .intro { max-width: 580px; }
+      .app { grid-template-columns: 1fr; }
+      .side { min-height: 0; }
+      .result { font-size: clamp(52px, 12vw, 76px); }
+    }
+
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 20px, 1160px); padding: 26px 0 34px; }
+      .masthead { gap: 14px; margin-bottom: 22px; }
+      h1 { font-size: clamp(42px, 14vw, 62px); }
+      .intro { font-size: 13px; }
+      .tab { min-height: 50px; padding-inline: 8px; font-size: 12px; }
+      .form { padding: 22px 10px 10px; }
+      .form-grid { grid-template-columns: 1fr; gap: 16px; }
+      .field-wide { grid-column: auto; }
+      .side { padding: 22px 20px; }
+      .metrics { grid-template-columns: 1fr; }
+      .metric-wide { grid-column: auto; }
+      .footer { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .card { animation: rise .55s ease both; }
+      .side { animation-delay: .08s; }
+      @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">Cultivation: Mortal to Immortal Tools</p>
+        <h1>Wing <span>Calculator</span></h1>
+      </div>
+      <p class="intro">Calculate a wing coefficient from its stat percentage, or find the base stat percentage required for a target coefficient.</p>
+    </header>
+
+    <section class="app" aria-label="Wing calculator">
+      <div class="card calculator">
+        <div class="tabs" role="tablist" aria-label="Calculation mode">
+          <button class="tab" id="coefficient-tab" type="button" role="tab" aria-selected="true" aria-controls="calculator-form">Find Coefficient</button>
+          <button class="tab" id="percent-tab" type="button" role="tab" aria-selected="false" aria-controls="calculator-form">Find Percentage</button>
+        </div>
+
+        <form class="form" id="calculator-form" novalidate>
+          <div class="form-grid">
+            <div class="field field-wide">
+              <label for="wing-type">Wing Type</label>
+              <div class="control-wrap">
+                <select id="wing-type">
+                  <option value="attack">Attack Boost Multiplier</option>
+                  <option value="hp">HP Boost Multiplier</option>
+                  <option value="mobDamage">Damage to Mob</option>
+                  <option value="moveSpeed">Move Speed</option>
+                  <option value="playerDamage">Damage to Player</option>
+                  <option value="playerResistance">Player Damage Resistance</option>
+                  <option value="mobResistance">Mob Damage Resistance</option>
+                  <option value="crit">Crit Hit Rate</option>
+                </select>
+                <span class="chevron" aria-hidden="true"></span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="rarity">Wing Rarity</label>
+              <div class="control-wrap">
+                <select id="rarity">
+                  <option value="6">6 - Scarce</option>
+                  <option value="7">7 - Epic</option>
+                  <option value="8">8 - Legendary</option>
+                  <option value="9">9 - Immortal</option>
+                  <option value="10">10 - Myth</option>
+                  <option value="11">11 - Eternal</option>
+                  <option value="12">12 - Celestial</option>
+                  <option value="13">13 - Primordial</option>
+                  <option value="14">14 - Transcendent</option>
+                </select>
+                <span class="chevron" aria-hidden="true"></span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="level">Wing / Player Level</label>
+              <div class="control-wrap">
+                <input id="level" type="number" value="100" min="1" step="1" inputmode="numeric" autocomplete="off">
+                <span class="suffix">LVL</span>
+              </div>
+              <p class="field-note" id="level-note">A whole number starting from 1</p>
+            </div>
+
+            <div class="field field-wide">
+              <label for="source-value" id="source-label">Wing Stat Percentage</label>
+              <div class="control-wrap">
+                <input id="source-value" type="text" value="10" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
+                <span class="suffix" id="source-suffix">%</span>
+              </div>
+              <p class="field-note" id="source-note">For example, 10 means 10%</p>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <aside class="card side" aria-live="polite">
+        <div class="result-head">
+          <span class="result-label" id="result-label">Wing Coefficient</span>
+          <span class="status" id="status">Ready</span>
+        </div>
+        <div class="result" id="result">23.6333</div>
+        <p class="result-caption" id="result-caption">The resulting coefficient for the selected stat.</p>
+
+        <div class="metrics">
+          <div class="metric">
+            <span>Wing Base</span>
+            <strong id="base-value">0.0555</strong>
+          </div>
+          <div class="metric">
+            <span>Rarity Multiplier</span>
+            <strong id="rarity-value">1.07142857</strong>
+          </div>
+          <div class="metric metric-wide">
+            <span>Calculation</span>
+            <strong id="calculation-value">0.10 ÷ (0.0555 × 1.07142857)</strong>
+          </div>
+        </div>
+
+        <div class="formula" id="formula">Coefficient = (Stat Percent / 100) / (Wing Base × Rarity Multiplier)</div>
+        <button class="copy" id="copy-result" type="button">Copy Result</button>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <span><b>No data is collected or stored.</b></span>
+      <span>8 types · 9 rarity tiers</span>
+    </footer>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const wingTypes = {
+        attack: { label: "Attack Boost Multiplier", start: 0.05, divisor: 18000, crit: false },
+        hp: { label: "HP Boost Multiplier", start: 0.05, divisor: 18000, crit: false },
+        mobDamage: { label: "Damage to Mob", start: 0.04, divisor: 22500, crit: false },
+        moveSpeed: { label: "Move Speed", start: 0.024, divisor: 25000, crit: false },
+        playerDamage: { label: "Damage to Player", start: 0.012, divisor: 50000, crit: false },
+        playerResistance: { label: "Player Damage Resistance", start: 0.012, divisor: 50000, crit: false },
+        mobResistance: { label: "Mob Damage Resistance", start: 0.012, divisor: 50000, crit: false },
+        crit: { label: "Crit Hit Rate", start: 0.001, divisor: 50000, crit: true }
+      };
+
+      const state = {
+        mode: "coefficient",
+        configs: {
+          coefficient: { wingType: "attack", rarity: "6", level: "100", source: "10" },
+          percent: { wingType: "attack", rarity: "6", level: "100", source: "1.5" }
+        }
+      };
+      const elements = {
+        tabs: Array.from(document.querySelectorAll(".tab")),
+        wingType: document.querySelector("#wing-type"),
+        rarity: document.querySelector("#rarity"),
+        level: document.querySelector("#level"),
+        source: document.querySelector("#source-value"),
+        sourceLabel: document.querySelector("#source-label"),
+        sourceSuffix: document.querySelector("#source-suffix"),
+        sourceNote: document.querySelector("#source-note"),
+        levelNote: document.querySelector("#level-note"),
+        resultLabel: document.querySelector("#result-label"),
+        result: document.querySelector("#result"),
+        resultCaption: document.querySelector("#result-caption"),
+        status: document.querySelector("#status"),
+        base: document.querySelector("#base-value"),
+        rarityValue: document.querySelector("#rarity-value"),
+        calculation: document.querySelector("#calculation-value"),
+        formula: document.querySelector("#formula"),
+        copy: document.querySelector("#copy-result")
+      };
+
+      const parseNumber = (value) => Number(String(value).replace(",", "."));
+
+      const format = (number, maxDigits = 8) => {
+        if (!Number.isFinite(number)) return "-";
+        if (number !== 0 && (Math.abs(number) >= 1e9 || Math.abs(number) < 1e-6)) {
+          return number.toExponential(6);
+        }
+        return number.toLocaleString("en-US", {
+          maximumFractionDigits: maxDigits,
+          useGrouping: false
+        });
+      };
+
+      const setValidState = (valid, message = "") => {
+        elements.status.textContent = valid ? "Ready" : "Check Inputs";
+        elements.status.style.color = valid ? "var(--good)" : "var(--danger)";
+        elements.levelNote.classList.remove("error");
+        elements.sourceNote.classList.remove("error");
+        if (!valid && message) {
+          const target = message.includes("Level") ? elements.levelNote : elements.sourceNote;
+          target.textContent = message;
+          target.classList.add("error");
+        }
+      };
+
+      const calculate = () => {
+        const type = wingTypes[elements.wingType.value];
+        const rarity = parseNumber(elements.rarity.value);
+        const level = parseNumber(elements.level.value);
+        const source = parseNumber(elements.source.value);
+
+        elements.levelNote.textContent = "A whole number starting from 1";
+        elements.sourceNote.textContent = state.mode === "coefficient"
+          ? "For example, 10 means 10%"
+          : "A non-negative number, for example 1.5";
+
+        if (!Number.isInteger(level) || level < 1) {
+          setValidState(false, "Level must be a whole number starting from 1");
+          elements.result.textContent = "-";
+          return;
+        }
+        if (!Number.isFinite(source) || source < 0) {
+          setValidState(false, "Enter a number greater than or equal to 0");
+          elements.result.textContent = "-";
+          return;
+        }
+
+        setValidState(true);
+        const wingBase = type.start + (level - 1) / type.divisor;
+        const rarityMultiplier = type.crit
+          ? 1 + 0.1 * (rarity - 6)
+          : (1 + 0.1 * (rarity - 5)) * 6.25 * ((rarity - 5) / 7);
+        const rarityName = elements.rarity.selectedOptions[0].textContent
+          .replace(/^\d+\s*-\s*/, "");
+        const isCoefficient = state.mode === "coefficient";
+        const result = isCoefficient
+          ? (source / 100) / (wingBase * rarityMultiplier)
+          : 100 * source * wingBase * rarityMultiplier;
+
+        elements.result.innerHTML = isCoefficient
+          ? format(result, 6)
+          : `${format(result, 6)}<span class="result-unit">%</span>`;
+        elements.base.textContent = format(wingBase, 10);
+        elements.rarityValue.textContent = format(rarityMultiplier, 10);
+        elements.calculation.textContent = isCoefficient
+          ? `${format(source / 100, 8)} ÷ (${format(wingBase, 8)} × ${format(rarityMultiplier, 8)})`
+          : `100 × ${format(source, 8)} × ${format(wingBase, 8)} × ${format(rarityMultiplier, 8)}`;
+        elements.resultCaption.textContent = isCoefficient
+          ? `Result for ${type.label} with Wing / Player Level ${level}, ${rarityName} rarity (${rarity}), and ${format(source, 8)}% Wing Stat Percentage.`
+          : `Required Wing Stat Percentage for ${type.label} with Wing / Player Level ${level}, ${rarityName} rarity (${rarity}), and a target coefficient of ${format(source, 8)}.`;
+        elements.copy.dataset.value = isCoefficient ? format(result, 6) : `${format(result, 6)}%`;
+      };
+
+      const setMode = (mode) => {
+        state.configs[state.mode] = {
+          wingType: elements.wingType.value,
+          rarity: elements.rarity.value,
+          level: elements.level.value,
+          source: elements.source.value
+        };
+        state.mode = mode;
+        const isCoefficient = mode === "coefficient";
+        const config = state.configs[mode];
+        elements.tabs.forEach((tab, index) => {
+          const active = index === (isCoefficient ? 0 : 1);
+          tab.setAttribute("aria-selected", String(active));
+          tab.tabIndex = active ? 0 : -1;
+        });
+        elements.sourceLabel.textContent = isCoefficient
+          ? "Wing Stat Percentage"
+          : "Target Wing Coefficient";
+        elements.sourceSuffix.textContent = isCoefficient ? "%" : "×";
+        elements.wingType.value = config.wingType;
+        elements.rarity.value = config.rarity;
+        elements.level.value = config.level;
+        elements.source.value = config.source;
+        elements.resultLabel.textContent = isCoefficient ? "Wing Coefficient" : "Base Stat Percentage";
+        elements.formula.textContent = isCoefficient
+          ? "Coefficient = (Stat Percent / 100) / (Wing Base × Rarity Multiplier)"
+          : "Stat Percent = 100 × Wing Coefficient × Wing Base × Rarity Multiplier";
+        calculate();
+      };
+
+      elements.tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => setMode(index === 0 ? "coefficient" : "percent"));
+        tab.addEventListener("keydown", (event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          const nextIndex = index === 0 ? 1 : 0;
+          elements.tabs[nextIndex].focus();
+          setMode(nextIndex === 0 ? "coefficient" : "percent");
+        });
+      });
+
+      [elements.wingType, elements.rarity, elements.level, elements.source]
+        .forEach((element) => element.addEventListener("input", calculate));
+
+      elements.copy.addEventListener("click", async () => {
+        const value = elements.copy.dataset.value;
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          elements.copy.textContent = "Copied";
+        } catch {
+          const area = document.createElement("textarea");
+          area.value = value;
+          document.body.append(area);
+          area.select();
+          document.execCommand("copy");
+          area.remove();
+          elements.copy.textContent = "Copied";
+        }
+        window.setTimeout(() => { elements.copy.textContent = "Copy Result"; }, 1400);
+      });
+
+      calculate();
+    })();
+  </script>
+</body>
+</html>
