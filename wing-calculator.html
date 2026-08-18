@@ -565,8 +565,7 @@
         const rarityMultiplier = type.crit
           ? 1 + 0.1 * (rarity - 6)
           : (1 + 0.1 * (rarity - 5)) * 6.25 * ((rarity - 5) / 7);
-        const rarityName = elements.rarity.selectedOptions[0].textContent
-          .replace(/^\d+\s*-\s*/, "");
+        const rarityName = elements.rarity.selectedOptions[0].textContent;
         const isCoefficient = state.mode === "coefficient";
         const result = isCoefficient
           ? (source / 100) / (wingBase * rarityMultiplier)
