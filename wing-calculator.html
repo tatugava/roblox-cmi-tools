@@ -285,6 +285,7 @@
     .metric { padding: 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(8, 10, 18, .4); }
     .metric span { display: block; margin-bottom: 7px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .07em; }
     .metric strong { display: block; overflow-wrap: anywhere; color: #b9b5c6; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .metric small { display: block; margin-top: 8px; overflow-wrap: anywhere; color: #777486; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; line-height: 1.45; }
     .metric-wide { grid-column: 1 / -1; }
 
     .formula {
@@ -448,10 +449,12 @@
           <div class="metric">
             <span>Wing Base</span>
             <strong id="base-value">0.0555</strong>
+            <small id="base-formula">0.05 + (100 - 1) ÷ 18000</small>
           </div>
           <div class="metric">
             <span>Rarity Multiplier</span>
             <strong id="rarity-value">1.07142857</strong>
+            <small id="rarity-formula">(1 + 0.1 × (6 - 5)) × 6.25 × ((6 - 5) ÷ 7)</small>
           </div>
           <div class="metric metric-wide">
             <span>Calculation</span>
@@ -459,7 +462,7 @@
           </div>
         </div>
 
-        <div class="formula" id="formula">Coefficient = (Stat Percent / 100) / (Wing Base × Rarity Multiplier)</div>
+        <div class="formula" id="formula">Wing Coefficient = (Wing Stat Percentage ÷ 100) ÷ (Wing Base × Rarity Multiplier)</div>
         <button class="copy" id="copy-result" type="button">Copy Result</button>
       </aside>
     </section>
@@ -507,7 +510,9 @@
         resultCaption: document.querySelector("#result-caption"),
         status: document.querySelector("#status"),
         base: document.querySelector("#base-value"),
+        baseFormula: document.querySelector("#base-formula"),
         rarityValue: document.querySelector("#rarity-value"),
+        rarityFormula: document.querySelector("#rarity-formula"),
         calculation: document.querySelector("#calculation-value"),
         formula: document.querySelector("#formula"),
         copy: document.querySelector("#copy-result")
@@ -575,9 +580,13 @@
           ? format(result, 6)
           : `${format(result, 6)}<span class="result-unit">%</span>`;
         elements.base.textContent = format(wingBase, 10);
+        elements.baseFormula.textContent = `${type.start} + (${level} - 1) ÷ ${type.divisor}`;
         elements.rarityValue.textContent = format(rarityMultiplier, 10);
+        elements.rarityFormula.textContent = type.crit
+          ? `1 + 0.1 × (${rarity} - 6)`
+          : `(1 + 0.1 × (${rarity} - 5)) × 6.25 × ((${rarity} - 5) ÷ 7)`;
         elements.calculation.textContent = isCoefficient
-          ? `${format(source / 100, 8)} ÷ (${format(wingBase, 8)} × ${format(rarityMultiplier, 8)})`
+          ? `(${format(source, 8)} ÷ 100) ÷ (${format(wingBase, 8)} × ${format(rarityMultiplier, 8)})`
           : `100 × ${format(source, 8)} × ${format(wingBase, 8)} × ${format(rarityMultiplier, 8)}`;
         elements.resultCaption.textContent = isCoefficient
           ? `Result for ${type.label} with Wing / Player Level ${level}, ${rarityName} rarity (${rarity}), and ${format(source, 8)}% Wing Stat Percentage.`
@@ -610,8 +619,8 @@
         elements.source.value = config.source;
         elements.resultLabel.textContent = isCoefficient ? "Wing Coefficient" : "Wing Stat Percentage";
         elements.formula.textContent = isCoefficient
-          ? "Coefficient = (Stat Percent / 100) / (Wing Base × Rarity Multiplier)"
-          : "Stat Percent = 100 × Wing Coefficient × Wing Base × Rarity Multiplier";
+          ? "Wing Coefficient = (Wing Stat Percentage ÷ 100) ÷ (Wing Base × Rarity Multiplier)"
+          : "Wing Stat Percentage = 100 × Wing Coefficient × Wing Base × Rarity Multiplier";
         calculate();
       };
 
