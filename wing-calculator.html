@@ -327,6 +327,9 @@
     }
 
     .result-action:hover { border-color: rgba(255, 255, 255, .16); background: rgba(12, 14, 24, .68); }
+    .result-action:disabled { cursor: not-allowed; opacity: .45; }
+
+    .calculation-toggle { margin-top: 10px; }
 
     .calculation-toggle-icon {
       width: 8px;
@@ -383,10 +386,6 @@
       .metrics { grid-template-columns: 1fr; }
       .metric-wide { grid-column: auto; }
       .footer { align-items: flex-start; flex-direction: column; }
-    }
-
-    @media (max-width: 440px) {
-      .result-actions { grid-template-columns: 1fr; }
     }
 
     @media (prefers-reduced-motion: no-preference) {
@@ -481,11 +480,13 @@
 
         <div class="result-actions">
           <button class="result-action copy" id="copy-result" type="button">Copy Result</button>
-          <button class="result-action calculation-toggle" id="calculation-toggle" type="button" aria-expanded="false" aria-controls="calculation-details">
-            <span id="calculation-toggle-label">Show Calculations</span>
-            <span class="calculation-toggle-icon" aria-hidden="true"></span>
-          </button>
+          <button class="result-action" id="save-image" type="button">Save Image</button>
         </div>
+
+        <button class="result-action calculation-toggle" id="calculation-toggle" type="button" aria-expanded="false" aria-controls="calculation-details">
+          <span id="calculation-toggle-label">Show Calculations</span>
+          <span class="calculation-toggle-icon" aria-hidden="true"></span>
+        </button>
 
         <div class="calculation-details" id="calculation-details" hidden>
           <div class="metrics">
@@ -559,6 +560,7 @@
         calculation: document.querySelector("#calculation-value"),
         formula: document.querySelector("#formula"),
         copy: document.querySelector("#copy-result"),
+        saveImage: document.querySelector("#save-image"),
         calculationToggle: document.querySelector("#calculation-toggle"),
         calculationToggleLabel: document.querySelector("#calculation-toggle-label"),
         calculationDetails: document.querySelector("#calculation-details")
@@ -580,6 +582,8 @@
       const setValidState = (valid, message = "") => {
         elements.status.textContent = valid ? "Ready" : "Check Inputs";
         elements.status.style.color = valid ? "var(--good)" : "var(--danger)";
+        elements.copy.disabled = !valid;
+        elements.saveImage.disabled = !valid;
         elements.levelNote.classList.remove("error");
         elements.sourceNote.classList.remove("error");
         if (!valid && message) {
@@ -670,6 +674,115 @@
         calculate();
       };
 
+      const drawRoundedRect = (context, x, y, width, height, radius, fill, stroke) => {
+        context.beginPath();
+        context.moveTo(x + radius, y);
+        context.lineTo(x + width - radius, y);
+        context.quadraticCurveTo(x + width, y, x + width, y + radius);
+        context.lineTo(x + width, y + height - radius);
+        context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        context.lineTo(x + radius, y + height);
+        context.quadraticCurveTo(x, y + height, x, y + height - radius);
+        context.lineTo(x, y + radius);
+        context.quadraticCurveTo(x, y, x + radius, y);
+        context.closePath();
+        if (fill) {
+          context.fillStyle = fill;
+          context.fill();
+        }
+        if (stroke) {
+          context.strokeStyle = stroke;
+          context.stroke();
+        }
+      };
+
+      const saveResultImage = () => {
+        const resultValue = elements.copy.dataset.value;
+        if (!resultValue || elements.saveImage.disabled) return;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 1200;
+        canvas.height = 630;
+        const context = canvas.getContext("2d");
+        const type = wingTypes[elements.wingType.value];
+        const rarityName = elements.rarity.selectedOptions[0].textContent;
+        const level = elements.level.value;
+        const isCoefficient = state.mode === "coefficient";
+        const resultType = isCoefficient ? "Wing Coefficient" : "Wing Stat Percentage";
+        const inputLabel = isCoefficient ? "Wing Stat Percentage" : "Target Wing Coefficient";
+        const inputValue = `${elements.source.value.trim().replace(",", ".")}${isCoefficient ? "%" : ""}`;
+
+        const background = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+        background.addColorStop(0, "#090b13");
+        background.addColorStop(.58, "#111522");
+        background.addColorStop(1, "#142534");
+        context.fillStyle = background;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        const glow = context.createRadialGradient(1020, 90, 0, 1020, 90, 460);
+        glow.addColorStop(0, "rgba(104, 221, 255, .15)");
+        glow.addColorStop(1, "rgba(104, 221, 255, 0)");
+        context.fillStyle = glow;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        context.lineWidth = 1;
+        drawRoundedRect(context, 54, 46, 1092, 538, 34, "rgba(19, 23, 36, .92)", "rgba(255, 255, 255, .12)");
+
+        context.fillStyle = "#68ddff";
+        context.font = "700 17px system-ui, sans-serif";
+        context.fillText("CULTIVATION: MORTAL TO IMMORTAL TOOLS", 96, 94);
+
+        context.fillStyle = "#9d9aae";
+        context.font = "700 17px system-ui, sans-serif";
+        context.fillText(resultType.toUpperCase(), 96, 155);
+
+        let resultFontSize = 92;
+        do {
+          context.font = `650 ${resultFontSize}px system-ui, sans-serif`;
+          resultFontSize -= 2;
+        } while (context.measureText(resultValue).width > 1008 && resultFontSize > 48);
+        context.fillStyle = "#f6f3ff";
+        context.fillText(resultValue, 92, 268);
+
+        const drawMeta = (x, y, width, label, value) => {
+          drawRoundedRect(context, x, y, width, 92, 17, "rgba(8, 10, 18, .52)", "rgba(255, 255, 255, .09)");
+          context.fillStyle = "#858192";
+          context.font = "700 14px system-ui, sans-serif";
+          context.fillText(label.toUpperCase(), x + 24, y + 30);
+          context.fillStyle = "#d7d3df";
+          context.font = "650 25px system-ui, sans-serif";
+          context.fillText(value, x + 24, y + 66, width - 48);
+        };
+
+        drawMeta(92, 326, 496, "Wing Type", type.label);
+        drawMeta(612, 326, 496, "Level", level);
+        drawMeta(92, 436, 496, "Wing Rarity", rarityName);
+        drawMeta(612, 436, 496, inputLabel, inputValue);
+
+        const slug = type.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        const filename = `${isCoefficient ? "wing-coefficient" : "wing-stat-percentage"}-${slug}.png`;
+        const download = (url, revoke = false) => {
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          document.body.append(link);
+          link.click();
+          link.remove();
+          if (revoke) window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          elements.saveImage.textContent = "Saved";
+          window.setTimeout(() => { elements.saveImage.textContent = "Save Image"; }, 1400);
+        };
+
+        if (canvas.toBlob) {
+          canvas.toBlob((blob) => {
+            if (blob) download(URL.createObjectURL(blob), true);
+            else download(canvas.toDataURL("image/png"));
+          }, "image/png");
+        } else {
+          download(canvas.toDataURL("image/png"));
+        }
+      };
+
       elements.tabs.forEach((tab, index) => {
         tab.addEventListener("click", () => setMode(index === 0 ? "coefficient" : "percent"));
         tab.addEventListener("keydown", (event) => {
@@ -690,6 +803,8 @@
         elements.calculationToggleLabel.textContent = expanded ? "Show Calculations" : "Hide Calculations";
         elements.calculationDetails.hidden = expanded;
       });
+
+      elements.saveImage.addEventListener("click", saveResultImage);
 
       elements.copy.addEventListener("click", async () => {
         const value = elements.copy.dataset.value;
