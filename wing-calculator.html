@@ -278,8 +278,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: auto;
-      padding-top: 28px;
+      margin-top: 10px;
     }
 
     .metric { padding: 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(8, 10, 18, .4); }
@@ -302,18 +301,49 @@
       overflow-wrap: anywhere;
     }
 
-    .copy {
-      align-self: flex-start;
-      margin-top: 14px;
-      padding: 0;
-      border: 0;
-      color: var(--accent);
-      background: none;
-      font-size: 12px;
-      font-weight: 750;
+    .result-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
     }
 
-    .copy:hover { color: #d9c7ff; }
+    .result-action {
+      display: flex;
+      width: 100%;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 15px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      color: #c9c5d4;
+      background: rgba(8, 10, 18, .44);
+      font-size: 12px;
+      font-weight: 750;
+      text-align: left;
+      transition: border-color .2s ease, background .2s ease;
+    }
+
+    .result-action:hover { border-color: rgba(255, 255, 255, .16); background: rgba(12, 14, 24, .68); }
+
+    .calculation-toggle-icon {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-right: 2px solid var(--muted);
+      border-bottom: 2px solid var(--muted);
+      transform: translateY(-2px) rotate(45deg);
+      transition: transform .2s ease;
+    }
+
+    .calculation-toggle[aria-expanded="true"] .calculation-toggle-icon {
+      transform: translateY(2px) rotate(225deg);
+    }
+
+    .calculation-details { margin-top: 10px; }
+    .calculation-details[hidden] { display: none; }
 
     .footer {
       display: flex;
@@ -353,6 +383,10 @@
       .metrics { grid-template-columns: 1fr; }
       .metric-wide { grid-column: auto; }
       .footer { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 440px) {
+      .result-actions { grid-template-columns: 1fr; }
     }
 
     @media (prefers-reduced-motion: no-preference) {
@@ -428,7 +462,7 @@
             <div class="field field-wide">
               <label for="source-value" id="source-label">Wing Stat Percentage</label>
               <div class="control-wrap">
-                <input id="source-value" type="text" value="10" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
+                <input id="source-value" type="text" value="8.1763" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
                 <span class="suffix" id="source-suffix">%</span>
               </div>
               <p class="field-note" id="source-note">For example, 10 means 10%</p>
@@ -445,25 +479,34 @@
         <div class="result" id="result">23.6333</div>
         <p class="result-caption" id="result-caption">The resulting coefficient for the selected stat.</p>
 
-        <div class="metrics">
-          <div class="metric">
-            <span>Wing Base</span>
-            <strong id="base-value">0.0555</strong>
-            <small id="base-formula">0.05 + (100 - 1) ÷ 18000</small>
-          </div>
-          <div class="metric">
-            <span>Rarity Multiplier</span>
-            <strong id="rarity-value">1.07142857</strong>
-            <small id="rarity-formula">(1 + 0.1 × (6 - 5)) × 6.25 × ((6 - 5) ÷ 7)</small>
-          </div>
-          <div class="metric metric-wide">
-            <span>Calculation</span>
-            <strong id="calculation-value">0.10 ÷ (0.0555 × 1.07142857)</strong>
-          </div>
+        <div class="result-actions">
+          <button class="result-action copy" id="copy-result" type="button">Copy Result</button>
+          <button class="result-action calculation-toggle" id="calculation-toggle" type="button" aria-expanded="false" aria-controls="calculation-details">
+            <span id="calculation-toggle-label">Show Calculations</span>
+            <span class="calculation-toggle-icon" aria-hidden="true"></span>
+          </button>
         </div>
 
-        <div class="formula" id="formula">Wing Coefficient = (Wing Stat Percentage ÷ 100) ÷ (Wing Base × Rarity Multiplier)</div>
-        <button class="copy" id="copy-result" type="button">Copy Result</button>
+        <div class="calculation-details" id="calculation-details" hidden>
+          <div class="metrics">
+            <div class="metric">
+              <span>Wing Base</span>
+              <strong id="base-value">0.0555</strong>
+              <small id="base-formula">0.05 + (100 - 1) ÷ 18000</small>
+            </div>
+            <div class="metric">
+              <span>Rarity Multiplier</span>
+              <strong id="rarity-value">1.07142857</strong>
+              <small id="rarity-formula">(1 + 0.1 × (6 - 5)) × 6.25 × ((6 - 5) ÷ 7)</small>
+            </div>
+            <div class="metric metric-wide">
+              <span>Calculation</span>
+              <strong id="calculation-value">0.10 ÷ (0.0555 × 1.07142857)</strong>
+            </div>
+          </div>
+
+          <div class="formula" id="formula">Wing Coefficient = (Wing Stat Percentage ÷ 100) ÷ (Wing Base × Rarity Multiplier)</div>
+        </div>
       </aside>
     </section>
 
@@ -491,7 +534,7 @@
       const state = {
         mode: "coefficient",
         configs: {
-          coefficient: { wingType: "attack", rarity: "6", level: "100", source: "10" },
+          coefficient: { wingType: "attack", rarity: "6", level: "100", source: "8.1763" },
           percent: { wingType: "attack", rarity: "6", level: "100", source: "1.5" }
         }
       };
@@ -515,7 +558,10 @@
         rarityFormula: document.querySelector("#rarity-formula"),
         calculation: document.querySelector("#calculation-value"),
         formula: document.querySelector("#formula"),
-        copy: document.querySelector("#copy-result")
+        copy: document.querySelector("#copy-result"),
+        calculationToggle: document.querySelector("#calculation-toggle"),
+        calculationToggleLabel: document.querySelector("#calculation-toggle-label"),
+        calculationDetails: document.querySelector("#calculation-details")
       };
 
       const parseNumber = (value) => Number(String(value).replace(",", "."));
@@ -637,6 +683,13 @@
 
       [elements.wingType, elements.rarity, elements.level, elements.source]
         .forEach((element) => element.addEventListener("input", calculate));
+
+      elements.calculationToggle.addEventListener("click", () => {
+        const expanded = elements.calculationToggle.getAttribute("aria-expanded") === "true";
+        elements.calculationToggle.setAttribute("aria-expanded", String(!expanded));
+        elements.calculationToggleLabel.textContent = expanded ? "Show Calculations" : "Hide Calculations";
+        elements.calculationDetails.hidden = expanded;
+      });
 
       elements.copy.addEventListener("click", async () => {
         const value = elements.copy.dataset.value;
