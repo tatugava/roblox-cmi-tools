@@ -701,9 +701,13 @@
         if (!resultValue || elements.saveImage.disabled) return;
 
         const canvas = document.createElement("canvas");
-        canvas.width = 1200;
-        canvas.height = 630;
+        const logicalWidth = 600;
+        const logicalHeight = 696;
+        const imageScale = 0.9;
+        canvas.width = Math.round(logicalWidth * imageScale);
+        canvas.height = Math.round(logicalHeight * imageScale);
         const context = canvas.getContext("2d");
+        context.scale(imageScale, imageScale);
         const type = wingTypes[elements.wingType.value];
         const rarityName = elements.rarity.selectedOptions[0].textContent;
         const level = elements.level.value;
@@ -712,52 +716,52 @@
         const inputLabel = isCoefficient ? "Wing Stat Percentage" : "Target Wing Coefficient";
         const inputValue = `${elements.source.value.trim().replace(",", ".")}${isCoefficient ? "%" : ""}`;
 
-        const background = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+        const background = context.createLinearGradient(0, 0, logicalWidth, logicalHeight);
         background.addColorStop(0, "#090b13");
         background.addColorStop(.58, "#111522");
         background.addColorStop(1, "#142534");
         context.fillStyle = background;
-        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillRect(0, 0, logicalWidth, logicalHeight);
 
-        const glow = context.createRadialGradient(1020, 90, 0, 1020, 90, 460);
+        const glow = context.createRadialGradient(510, 80, 0, 510, 80, 400);
         glow.addColorStop(0, "rgba(104, 221, 255, .15)");
         glow.addColorStop(1, "rgba(104, 221, 255, 0)");
         context.fillStyle = glow;
-        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillRect(0, 0, logicalWidth, logicalHeight);
 
         context.lineWidth = 1;
-        drawRoundedRect(context, 54, 46, 1092, 538, 34, "rgba(19, 23, 36, .92)", "rgba(255, 255, 255, .12)");
+        drawRoundedRect(context, 28, 26, 544, 644, 28, "rgba(19, 23, 36, .92)", "rgba(255, 255, 255, .12)");
 
         context.fillStyle = "#68ddff";
         context.font = "700 17px system-ui, sans-serif";
-        context.fillText("CULTIVATION: MORTAL TO IMMORTAL TOOLS", 96, 94);
+        context.fillText("CULTIVATION: MORTAL TO IMMORTAL TOOLS", 56, 72);
 
         context.fillStyle = "#9d9aae";
         context.font = "700 17px system-ui, sans-serif";
-        context.fillText(resultType.toUpperCase(), 96, 155);
+        context.fillText(resultType.toUpperCase(), 56, 132);
 
-        let resultFontSize = 92;
+        let resultFontSize = 82;
         do {
           context.font = `650 ${resultFontSize}px system-ui, sans-serif`;
           resultFontSize -= 2;
-        } while (context.measureText(resultValue).width > 1008 && resultFontSize > 48);
+        } while (context.measureText(resultValue).width > 488 && resultFontSize > 44);
         context.fillStyle = "#f6f3ff";
-        context.fillText(resultValue, 92, 268);
+        context.fillText(resultValue, 54, 236);
 
         const drawMeta = (x, y, width, label, value) => {
-          drawRoundedRect(context, x, y, width, 92, 17, "rgba(8, 10, 18, .52)", "rgba(255, 255, 255, .09)");
+          drawRoundedRect(context, x, y, width, 82, 16, "rgba(8, 10, 18, .52)", "rgba(255, 255, 255, .09)");
           context.fillStyle = "#858192";
-          context.font = "700 14px system-ui, sans-serif";
-          context.fillText(label.toUpperCase(), x + 24, y + 30);
+          context.font = "700 13px system-ui, sans-serif";
+          context.fillText(label.toUpperCase(), x + 22, y + 27);
           context.fillStyle = "#d7d3df";
-          context.font = "650 25px system-ui, sans-serif";
-          context.fillText(value, x + 24, y + 66, width - 48);
+          context.font = "650 23px system-ui, sans-serif";
+          context.fillText(value, x + 22, y + 59, width - 44);
         };
 
-        drawMeta(92, 326, 496, "Wing Type", type.label);
-        drawMeta(612, 326, 496, "Level", level);
-        drawMeta(92, 436, 496, "Wing Rarity", rarityName);
-        drawMeta(612, 436, 496, inputLabel, inputValue);
+        drawMeta(56, 280, 488, "Wing Type", type.label);
+        drawMeta(56, 374, 488, "Level", level);
+        drawMeta(56, 468, 488, "Wing Rarity", rarityName);
+        drawMeta(56, 562, 488, inputLabel, inputValue);
 
         const slug = type.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
         const filename = `${isCoefficient ? "wing-coefficient" : "wing-stat-percentage"}-${slug}.png`;
