@@ -764,7 +764,18 @@
         drawMeta(56, 562, 488, inputLabel, inputValue);
 
         const slug = type.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-        const filename = `${isCoefficient ? "wing-coefficient" : "wing-stat-percentage"}-${slug}.png`;
+        const savedAt = new Date();
+        const padDatePart = (value) => String(value).padStart(2, "0");
+        const timestamp = [
+          savedAt.getFullYear(),
+          padDatePart(savedAt.getMonth() + 1),
+          padDatePart(savedAt.getDate())
+        ].join("-") + "_" + [
+          padDatePart(savedAt.getHours()),
+          padDatePart(savedAt.getMinutes()),
+          padDatePart(savedAt.getSeconds())
+        ].join("-");
+        const filename = `${isCoefficient ? "wing-coefficient" : "wing-stat-percentage"}-${slug}-${timestamp}.png`;
         const download = (url, revoke = false) => {
           const link = document.createElement("a");
           link.href = url;
