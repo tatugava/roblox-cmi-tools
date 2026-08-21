@@ -453,7 +453,7 @@
             <div class="field">
               <label for="level">Wing / Player Level</label>
               <div class="control-wrap">
-                <input id="level" type="number" value="100" min="1" step="1" inputmode="numeric" autocomplete="off">
+                <input id="level" type="number" value="1" min="1" step="1" inputmode="numeric" autocomplete="off">
                 <span class="suffix">LVL</span>
               </div>
               <p class="field-note" id="level-note">A whole number starting from 1</p>
@@ -462,7 +462,7 @@
             <div class="field field-wide">
               <label for="source-value" id="source-label">Wing Stat Percentage</label>
               <div class="control-wrap">
-                <input id="source-value" type="text" value="8.1763" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
+                <input id="source-value" type="text" value="0" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off">
                 <span class="suffix" id="source-suffix">%</span>
               </div>
               <p class="field-note" id="source-note">Enter the stat percentage as shown in the game, without the % sign.</p>
@@ -534,8 +534,8 @@
       const state = {
         mode: "coefficient",
         configs: {
-          coefficient: { wingType: "attack", rarity: "6", level: "100", source: "8.1763" },
-          percent: { wingType: "attack", rarity: "6", level: "100", source: "1.5" }
+          coefficient: { wingType: "attack", rarity: "6", level: "1", source: "0" },
+          percent: { wingType: "attack", rarity: "6", level: "1", source: "1.5" }
         }
       };
       const elements = {
