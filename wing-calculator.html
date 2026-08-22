@@ -672,6 +672,9 @@
         const levelText = createCaptionValue(`Level ${level}`, "result-detail");
         const rarityText = createCaptionValue(rarityName, "result-rarity");
         rarityText.style.color = rarityColors[elements.rarity.value];
+        const rarityCode = elements.calculationToggle.getAttribute("aria-expanded") === "true"
+          ? ` (${rarity})`
+          : "";
         const captionParts = [
           document.createTextNode(isCoefficient ? "Result for " : "Required "),
           effectText,
@@ -681,11 +684,11 @@
           rarityText
         ];
         if (isCoefficient) {
-          captionParts.push(document.createTextNode(` rarity (${rarity}).`));
+          captionParts.push(document.createTextNode(` rarity${rarityCode}.`));
         } else {
           const coefficientText = createCaptionValue(format(source, 8), "result-detail");
           captionParts.push(
-            document.createTextNode(` rarity (${rarity}), for a target coefficient of `),
+            document.createTextNode(` rarity${rarityCode}, for a target coefficient of `),
             coefficientText,
             document.createTextNode(".")
           );
@@ -868,6 +871,7 @@
         elements.calculationToggle.setAttribute("aria-expanded", String(!expanded));
         elements.calculationToggleLabel.textContent = expanded ? "Show Calculations" : "Hide Calculations";
         elements.calculationDetails.hidden = expanded;
+        calculate();
       });
 
       elements.saveImage.addEventListener("click", saveResultImage);
