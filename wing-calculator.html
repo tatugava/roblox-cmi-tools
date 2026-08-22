@@ -197,6 +197,7 @@
     select option { background: #151824; }
 
     input:hover, select:hover { border-color: rgba(255, 255, 255, .17); }
+    #rarity { font-weight: 750; }
     input:focus, select:focus {
       border-color: var(--accent);
       background: rgba(10, 12, 21, .95);
@@ -273,6 +274,8 @@
       vertical-align: .28em;
     }
     .result-caption { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .result-emphasis { font-weight: 750; }
+    .result-detail { color: #c5c1cc; }
 
     .metrics {
       display: grid;
@@ -532,6 +535,18 @@
         crit: { label: "Crit Hit Rate", start: 0.001, divisor: 50000, crit: true }
       };
 
+      const rarityColors = {
+        6: "rgb(243, 192, 255)",
+        7: "rgb(254, 192, 84)",
+        8: "rgb(169, 117, 235)",
+        9: "rgb(223, 102, 209)",
+        10: "rgb(234, 142, 70)",
+        11: "rgb(249, 217, 49)",
+        12: "rgb(231, 56, 52)",
+        13: "rgb(110, 184, 128)",
+        14: "rgb(113, 146, 208)"
+      };
+
       const state = {
         mode: "coefficient",
         configs: {
@@ -566,6 +581,10 @@
         calculationDetails: document.querySelector("#calculation-details")
       };
 
+      Array.from(elements.rarity.options).forEach((option) => {
+        option.style.color = rarityColors[option.value];
+      });
+
       const parseNumber = (value) => Number(String(value).replace(",", "."));
 
       const format = (number, maxDigits = 8) => {
@@ -598,6 +617,8 @@
         const rarity = parseNumber(elements.rarity.value);
         const level = parseNumber(elements.level.value);
         const source = parseNumber(elements.source.value);
+
+        elements.rarity.style.color = rarityColors[elements.rarity.value];
 
         elements.levelNote.textContent = "A whole number starting from 1";
         elements.sourceNote.textContent = state.mode === "coefficient"
@@ -638,9 +659,38 @@
         elements.calculation.textContent = isCoefficient
           ? `(${format(source, 8)} ÷ 100) ÷ (${format(wingBase, 8)} × ${format(rarityMultiplier, 8)})`
           : `100 × ${format(source, 8)} × ${format(wingBase, 8)} × ${format(rarityMultiplier, 8)}`;
-        elements.resultCaption.textContent = isCoefficient
-          ? `Result for ${type.label} with Wing / Player Level ${level}, ${rarityName} rarity (${rarity}), and ${format(source, 8)}% Wing Stat Percentage.`
-          : `Required Wing Stat Percentage for ${type.label} with Wing / Player Level ${level}, ${rarityName} rarity (${rarity}), and a target coefficient of ${format(source, 8)}.`;
+        const createCaptionValue = (value, className) => {
+          const element = document.createElement("span");
+          element.className = `result-emphasis ${className}`;
+          element.textContent = value;
+          return element;
+        };
+        const effectText = createCaptionValue(
+          `${isCoefficient ? format(source, 8) : format(result, 6)}% ${type.label}`,
+          "result-detail"
+        );
+        const levelText = createCaptionValue(`Level ${level}`, "result-detail");
+        const rarityText = createCaptionValue(rarityName, "result-rarity");
+        rarityText.style.color = rarityColors[elements.rarity.value];
+        const captionParts = [
+          document.createTextNode(isCoefficient ? "Result for " : "Required "),
+          effectText,
+          document.createTextNode(" at "),
+          levelText,
+          document.createTextNode(", "),
+          rarityText
+        ];
+        if (isCoefficient) {
+          captionParts.push(document.createTextNode(` rarity (${rarity}).`));
+        } else {
+          const coefficientText = createCaptionValue(format(source, 8), "result-detail");
+          captionParts.push(
+            document.createTextNode(` rarity (${rarity}), for a target coefficient of `),
+            coefficientText,
+            document.createTextNode(".")
+          );
+        }
+        elements.resultCaption.replaceChildren(...captionParts);
         elements.copy.dataset.value = isCoefficient ? format(result, 6) : `${format(result, 6)}%`;
       };
 
@@ -710,6 +760,7 @@
         context.scale(imageScale, imageScale);
         const type = wingTypes[elements.wingType.value];
         const rarityName = elements.rarity.selectedOptions[0].textContent;
+        const rarityColor = rarityColors[elements.rarity.value];
         const level = elements.level.value;
         const isCoefficient = state.mode === "coefficient";
         const resultType = isCoefficient ? "Wing Coefficient" : "Wing Stat Percentage";
@@ -748,19 +799,19 @@
         context.fillStyle = "#f6f3ff";
         context.fillText(resultValue, 54, 236);
 
-        const drawMeta = (x, y, width, label, value) => {
+        const drawMeta = (x, y, width, label, value, valueColor = "#d7d3df") => {
           drawRoundedRect(context, x, y, width, 82, 16, "rgba(8, 10, 18, .52)", "rgba(255, 255, 255, .09)");
           context.fillStyle = "#858192";
           context.font = "700 13px system-ui, sans-serif";
           context.fillText(label.toUpperCase(), x + 22, y + 27);
-          context.fillStyle = "#d7d3df";
+          context.fillStyle = valueColor;
           context.font = "650 23px system-ui, sans-serif";
           context.fillText(value, x + 22, y + 59, width - 44);
         };
 
         drawMeta(56, 280, 488, "Wing Type", type.label);
         drawMeta(56, 374, 488, "Level", level);
-        drawMeta(56, 468, 488, "Wing Rarity", rarityName);
+        drawMeta(56, 468, 488, "Wing Rarity", rarityName, rarityColor);
         drawMeta(56, 562, 488, inputLabel, inputValue);
 
         const slug = type.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
